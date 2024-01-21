@@ -1,11 +1,11 @@
 const ID_PING: &str = "PING";
 
 #[derive(Debug)]
-pub enum InputMessage {
+pub enum InboundMessage {
     Ping,
 }
 
-impl TryFrom<&[u8]> for InputMessage {
+impl TryFrom<&[u8]> for InboundMessage {
     type Error = anyhow::Error;
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
@@ -14,7 +14,10 @@ impl TryFrom<&[u8]> for InputMessage {
 
         loop {
             let Some(line) = lines.next() else {
-                anyhow::bail!(format!("-> Unknown command '{}'", message_string))
+                anyhow::bail!(format!(
+                    "-> Failed to parse inbound message '{}'",
+                    message_string
+                ))
             };
             let line = line.to_uppercase();
             match line.as_str() {
