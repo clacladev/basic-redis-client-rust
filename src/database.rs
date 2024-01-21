@@ -1,10 +1,9 @@
+use self::resp::outbound_message::OutboundMessage;
+use crate::database::resp::inbound_message::InboundMessage;
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::{TcpListener, TcpStream},
 };
-
-use self::resp::outbound_message::OutboundMessage;
-use crate::database::resp::inbound_message::InboundMessage;
 
 const DEFAULT_IP: &str = "127.0.0.1";
 const DEFAULT_PORT: u32 = 6379;
