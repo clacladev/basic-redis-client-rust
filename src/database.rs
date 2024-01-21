@@ -23,17 +23,17 @@ pub async fn start_database() -> anyhow::Result<()> {
 }
 
 async fn handle_stream(stream: &mut TcpStream) -> anyhow::Result<()> {
-    let mut buffer: Vec<u8> = Vec::with_capacity(1 * MB);
-    let bytes_read = stream.read_buf(&mut buffer).await?;
-    let inbound_message = InboundMessage::try_from(&buffer[..bytes_read])?;
-    println!("-> Inbound message: {:?}", inbound_message);
+    loop {
+        let mut buffer: Vec<u8> = Vec::with_capacity(1 * MB);
+        let bytes_read = stream.read_buf(&mut buffer).await?;
+        let inbound_message = InboundMessage::try_from(&buffer[..bytes_read])?;
+        println!("-> Inbound message: {:?}", inbound_message);
 
-    let outbound_message = handle_message(&inbound_message)?;
-    println!("-> Outbound message: {:?}", outbound_message);
-    let outbound_message_bytes: Vec<u8> = outbound_message.into();
-    stream.write_all(&outbound_message_bytes).await?;
-
-    Ok(())
+        let outbound_message = handle_message(&inbound_message)?;
+        println!("-> Outbound message: {:?}", outbound_message);
+        let outbound_message_bytes: Vec<u8> = outbound_message.into();
+        stream.write_all(&outbound_message_bytes).await?;
+    }
 }
 
 fn handle_message(message: &InboundMessage) -> anyhow::Result<OutboundMessage> {
