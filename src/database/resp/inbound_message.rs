@@ -1,8 +1,10 @@
 const ID_PING: &str = "PING";
+const ID_ECHO: &str = "ECHO";
 
 #[derive(Debug)]
 pub enum InboundMessage {
     Ping,
+    Echo(String),
 }
 
 impl TryFrom<&[u8]> for InboundMessage {
@@ -10,20 +12,30 @@ impl TryFrom<&[u8]> for InboundMessage {
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
         let message_string = String::from_utf8_lossy(value).to_string();
-        let mut lines = message_string.lines();
+        let lines: Vec<&str> = message_string.lines().collect();
 
-        loop {
-            let Some(line) = lines.next() else {
-                anyhow::bail!(format!(
-                    "-> Failed to parse inbound message '{}'",
-                    message_string
-                ))
-            };
-            let line = line.to_uppercase();
-            match line.as_str() {
-                ID_PING => return Ok(Self::Ping),
-                _ => continue,
-            }
+        if lines.len() < 3 {
+            anyhow::bail!(format!(
+                "-> Failed to parse inbound message:\n'{}'",
+                message_string
+            ))
+        }
+
+        let message_id = lines[2].to_uppercase();
+        match message_id.as_str() {
+            ID_PING => return Ok(Self::Ping),
+            ID_ECHO => return parse_echo_message(&lines[3..]),
+            _ => anyhow::bail!(format!(
+                "-> Failed to parse inbound message:\n'{}'",
+                message_string
+            )),
         }
     }
+}
+
+fn parse_echo_message(lines: &[&str]) -> anyhow::Result<InboundMessage> {
+    if lines.len() < 2 {
+        anyhow::bail!("-> Failed to parse inbound message Echo")
+    }
+    Ok(InboundMessage::Echo(lines[1].to_string()))
 }

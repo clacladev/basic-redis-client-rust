@@ -38,5 +38,6 @@ async fn handle_stream(stream: &mut TcpStream) -> anyhow::Result<()> {
 fn handle_message(message: &InboundMessage) -> anyhow::Result<OutboundMessage> {
     match message {
         &InboundMessage::Ping => Ok(OutboundMessage::Pong),
+        &InboundMessage::Echo(ref string) => Ok(OutboundMessage::Echo(string.clone())),
     }
 }
