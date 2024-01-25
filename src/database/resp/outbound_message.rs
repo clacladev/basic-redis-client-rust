@@ -1,5 +1,6 @@
 #[derive(Debug)]
 pub enum OutboundMessage {
+    Ok,
     Pong,
     Echo(String),
 }
@@ -7,6 +8,7 @@ pub enum OutboundMessage {
 impl Into<String> for OutboundMessage {
     fn into(self) -> String {
         match self {
+            Self::Ok => "+OK\r\n".to_string(),
             Self::Pong => "+PONG\r\n".to_string(),
             Self::Echo(string) => format!("+{}\r\n", string),
         }

@@ -9,6 +9,7 @@ const DEFAULT_IP: &str = "127.0.0.1";
 const DEFAULT_PORT: u32 = 6379;
 const MB: usize = 1024 * 1024;
 
+mod actions;
 mod resp;
 
 pub async fn start_database() -> anyhow::Result<()> {
@@ -39,5 +40,9 @@ fn handle_message(message: &InboundMessage) -> anyhow::Result<OutboundMessage> {
     match message {
         &InboundMessage::Ping => Ok(OutboundMessage::Pong),
         &InboundMessage::Echo(ref string) => Ok(OutboundMessage::Echo(string.clone())),
+        &InboundMessage::Set { ref key, ref value } => {
+            actions::set(key.as_str(), value.as_str())?;
+            Ok(OutboundMessage::Ok)
+        }
     }
 }
