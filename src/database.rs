@@ -15,4 +15,8 @@ impl Database {
         self.data.insert(key, value);
         Ok(())
     }
+
+    pub fn get(&self, key: String) -> anyhow::Result<Option<String>> {
+        Ok(self.data.get(&key).cloned())
+    }
 }

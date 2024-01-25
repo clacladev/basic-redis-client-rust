@@ -3,6 +3,7 @@ pub enum OutboundMessage {
     Ok,
     Pong,
     Echo(String),
+    Get(Option<String>),
 }
 
 impl Into<String> for OutboundMessage {
@@ -11,6 +12,8 @@ impl Into<String> for OutboundMessage {
             Self::Ok => "+OK\r\n".to_string(),
             Self::Pong => "+PONG\r\n".to_string(),
             Self::Echo(string) => format!("+{}\r\n", string),
+            Self::Get(None) => "$0\r\n\r\n".to_string(),
+            Self::Get(Some(value)) => format!("${}\r\n{}\r\n", value.len(), value),
         }
     }
 }

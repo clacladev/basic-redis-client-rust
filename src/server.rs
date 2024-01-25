@@ -59,6 +59,7 @@ fn handle_message(
         &InboundMessage::Set { ref key, ref value } => {
             handle_action_set(database, key.into(), value.into())
         }
+        &InboundMessage::Get { ref key } => handle_action_get(database, key.into()),
     }
 }
 
@@ -72,4 +73,15 @@ fn handle_action_set(
     };
     database.set(key, value)?;
     Ok(OutboundMessage::Ok)
+}
+
+fn handle_action_get(
+    database: &Arc<Mutex<Database>>,
+    key: String,
+) -> anyhow::Result<OutboundMessage> {
+    let Ok(database) = database.lock() else {
+        anyhow::bail!("Failed to lock database");
+    };
+    let value = database.get(key)?;
+    Ok(OutboundMessage::Get(value))
 }
