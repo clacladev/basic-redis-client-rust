@@ -57,9 +57,11 @@ fn handle_message(
     match message {
         &InboundMessage::Ping => Ok(OutboundMessage::Pong),
         &InboundMessage::Echo(ref string) => Ok(OutboundMessage::Echo(string.into())),
-        &InboundMessage::Set { ref key, ref value } => {
-            handle_action_set(database, key.into(), value.into())
-        }
+        &InboundMessage::Set {
+            ref key,
+            ref value,
+            ref expires_at,
+        } => handle_action_set(database, key.into(), value.into(), *expires_at),
         &InboundMessage::Get { ref key } => handle_action_get(database, key.into()),
     }
 }
@@ -68,11 +70,12 @@ fn handle_action_set(
     database: &Arc<Mutex<Database>>,
     key: String,
     value: String,
+    expires_at: Option<u128>,
 ) -> anyhow::Result<OutboundMessage> {
     let Ok(mut database) = database.lock() else {
         anyhow::bail!("Failed to lock database");
     };
-    database.set(key, value)?;
+    database.set(key, value, expires_at)?;
     Ok(OutboundMessage::Ok)
 }
 
@@ -80,7 +83,7 @@ fn handle_action_get(
     database: &Arc<Mutex<Database>>,
     key: String,
 ) -> anyhow::Result<OutboundMessage> {
-    let Ok(database) = database.lock() else {
+    let Ok(mut database) = database.lock() else {
         anyhow::bail!("Failed to lock database");
     };
     let value = database.get(key)?;
