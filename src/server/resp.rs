@@ -1,23 +1,26 @@
-const END_OF_LINE: &str = "\r\n";
+pub const END_OF_LINE: &str = "\r\n";
+pub const NULL_BULK_STRING: &str = "$-1";
 
-fn create_reply(lines: Vec<&str>) -> String {
+pub fn create_simple_string_reply(string: &str) -> String {
+    format!("+{string}{END_OF_LINE}")
+}
+
+pub fn create_null_bulk_strings_reply() -> String {
+    format!("{NULL_BULK_STRING}{END_OF_LINE}")
+}
+
+pub fn create_bulk_strings_reply(lines: Vec<&str>) -> String {
     let mut reply = String::new();
     for line in lines {
-        reply.push_str(&line);
-        reply.push_str(END_OF_LINE);
+        reply.push_str(&format!("${}{END_OF_LINE}{line}{END_OF_LINE}", line.len()));
     }
     reply
 }
 
-pub fn create_simple_string_reply(string: &str) -> String {
-    create_reply(vec![format!("+{}", string).as_str()])
-}
-
-pub fn create_null_bulk_strings_reply() -> String {
-    create_reply(vec!["$-1"])
-}
-
-pub fn create_bulk_strings_reply(string: &str) -> String {
-    let length_string = format!("${}", string.len());
-    create_reply(vec![&length_string, string])
+pub fn create_array_reply(lines: Vec<&str>) -> String {
+    format!(
+        "*{}{END_OF_LINE}{}",
+        lines.len(),
+        create_bulk_strings_reply(lines)
+    )
 }

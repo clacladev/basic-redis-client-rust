@@ -6,7 +6,7 @@ use tokio::{
     net::{TcpListener, TcpStream},
 };
 
-use self::inbound_message::InboundMessage;
+use self::inbound_message::{config_message::ConfigMessage, InboundMessage};
 use self::outbound_message::OutboundMessage;
 
 const DEFAULT_IP: &str = "127.0.0.1";
@@ -63,6 +63,9 @@ fn handle_message(
             ref expires_at,
         } => handle_action_set(database, key.into(), value.into(), *expires_at),
         &InboundMessage::Get { ref key } => handle_action_get(database, key.into()),
+        &InboundMessage::Config(ref config_message) => {
+            handle_action_config(database, config_message.clone())
+        }
     }
 }
 
@@ -88,4 +91,25 @@ fn handle_action_get(
     };
     let value = database.get(key)?;
     Ok(OutboundMessage::Get(value))
+}
+
+fn handle_action_config(
+    _database: &Arc<Mutex<Database>>,
+    config_message: ConfigMessage,
+) -> anyhow::Result<OutboundMessage> {
+    // let Ok(mut database) = database.lock() else {
+    //     anyhow::bail!("Failed to lock database");
+    // };
+    // let value = database.get(key)?;
+
+    match config_message {
+        ConfigMessage::Get { key } => {
+            // TODO: Implement
+            let value = "/dir/yolo".to_string();
+            Ok(OutboundMessage::ConfigGet {
+                key,
+                value: Some(value),
+            })
+        }
+    }
 }
