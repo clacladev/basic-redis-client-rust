@@ -1,3 +1,7 @@
+use super::resp::{
+    create_bulk_strings_reply, create_null_bulk_strings_reply, create_simple_string_reply,
+};
+
 #[derive(Debug)]
 pub enum OutboundMessage {
     Ok,
@@ -9,11 +13,11 @@ pub enum OutboundMessage {
 impl Into<String> for OutboundMessage {
     fn into(self) -> String {
         match self {
-            Self::Ok => "+OK\r\n".to_string(),
-            Self::Pong => "+PONG\r\n".to_string(),
-            Self::Echo(string) => format!("+{}\r\n", string),
-            Self::Get(None) => "$0\r\n\r\n".to_string(),
-            Self::Get(Some(value)) => format!("${}\r\n{}\r\n", value.len(), value),
+            Self::Ok => create_simple_string_reply("OK"),
+            Self::Pong => create_simple_string_reply("PONG"),
+            Self::Echo(string) => create_simple_string_reply(&string),
+            Self::Get(None) => create_null_bulk_strings_reply(),
+            Self::Get(Some(value)) => create_bulk_strings_reply(&value),
         }
     }
 }
