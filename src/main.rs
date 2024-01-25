@@ -1,6 +1,7 @@
-use database::start_database;
+use server::start_database;
 
 mod database;
+mod server;
 
 #[tokio::main]
 async fn main() {
