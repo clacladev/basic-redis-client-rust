@@ -27,7 +27,7 @@ pub async fn start_database() -> anyhow::Result<()> {
 
     loop {
         let (mut stream, _) = listener.accept().await?;
-        let task_database = database.clone();
+        let task_database = Arc::clone(&database);
         tokio::spawn(async move { handle_stream(&task_database, &mut stream).await });
     }
 }
