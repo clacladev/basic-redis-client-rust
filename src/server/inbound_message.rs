@@ -3,14 +3,16 @@ use std::time::SystemTime;
 
 pub mod config_message;
 
+const ID_CONFIG: &str = "CONFIG";
 const ID_PING: &str = "PING";
 const ID_ECHO: &str = "ECHO";
 const ID_SET: &str = "SET";
 const ID_GET: &str = "GET";
-const ID_CONFIG: &str = "CONFIG";
+const ID_KEYS: &str = "KEYS";
 
 #[derive(Debug)]
 pub enum InboundMessage {
+    Config(ConfigMessage),
     Ping,
     Echo(String),
     Set {
@@ -21,7 +23,9 @@ pub enum InboundMessage {
     Get {
         key: String,
     },
-    Config(ConfigMessage),
+    Keys {
+        pattern: String,
+    },
 }
 
 impl TryFrom<&[u8]> for InboundMessage {
@@ -31,7 +35,9 @@ impl TryFrom<&[u8]> for InboundMessage {
         let message_string = String::from_utf8_lossy(value).to_string();
         let lines: Vec<&str> = message_string
             .lines()
-            .filter(|line| !line.starts_with("$") && !line.starts_with("*"))
+            .filter(|line| {
+                *line == "$" || *line == "*" || (!line.starts_with("$") && !line.starts_with("*"))
+            })
             .collect();
 
         if lines.is_empty() {
@@ -43,11 +49,12 @@ impl TryFrom<&[u8]> for InboundMessage {
 
         let message_id = lines[0].to_uppercase();
         match message_id.as_str() {
-            ID_PING => Ok(Self::Ping),
+            ID_CONFIG => parse_config(&lines[1..]),
+            ID_PING => parse_ping(),
             ID_ECHO => parse_echo(&lines[1..]),
             ID_SET => parse_set(&lines[1..]),
             ID_GET => parse_get(&lines[1..]),
-            ID_CONFIG => parse_config(&lines[1..]),
+            ID_KEYS => parse_keys(&lines[1..]),
             _ => anyhow::bail!(format!(
                 "-> Failed to parse inbound message:\n'{}'",
                 message_string
@@ -79,6 +86,16 @@ fn get_option(lines: &[&str], key: &str) -> Option<String> {
     }
 
     None
+}
+
+fn parse_config(lines: &[&str]) -> anyhow::Result<InboundMessage> {
+    validate(lines, 2, ID_CONFIG)?;
+    let config_message = ConfigMessage::try_from(lines)?;
+    Ok(InboundMessage::Config(config_message))
+}
+
+fn parse_ping() -> anyhow::Result<InboundMessage> {
+    Ok(InboundMessage::Ping)
 }
 
 fn parse_echo(lines: &[&str]) -> anyhow::Result<InboundMessage> {
@@ -113,8 +130,8 @@ fn parse_get(lines: &[&str]) -> anyhow::Result<InboundMessage> {
     Ok(InboundMessage::Get { key })
 }
 
-fn parse_config(lines: &[&str]) -> anyhow::Result<InboundMessage> {
-    validate(lines, 2, ID_CONFIG)?;
-    let config_message = ConfigMessage::try_from(lines)?;
-    Ok(InboundMessage::Config(config_message))
+fn parse_keys(lines: &[&str]) -> anyhow::Result<InboundMessage> {
+    validate(lines, 1, ID_KEYS)?;
+    let pattern = lines[0].to_string();
+    Ok(InboundMessage::Keys { pattern })
 }

@@ -57,6 +57,9 @@ fn handle_message(
     message: &InboundMessage,
 ) -> anyhow::Result<OutboundMessage> {
     match message {
+        &InboundMessage::Config(ref config_message) => {
+            handle_action_config(database, config_message.clone())
+        }
         &InboundMessage::Ping => Ok(OutboundMessage::Pong),
         &InboundMessage::Echo(ref string) => Ok(OutboundMessage::Echo(string.into())),
         &InboundMessage::Set {
@@ -65,8 +68,21 @@ fn handle_message(
             ref expires_at,
         } => handle_action_set(database, key.into(), value.into(), *expires_at),
         &InboundMessage::Get { ref key } => handle_action_get(database, key.into()),
-        &InboundMessage::Config(ref config_message) => {
-            handle_action_config(database, config_message.clone())
+        &InboundMessage::Keys { ref pattern } => handle_action_keys(database, pattern.into()),
+    }
+}
+
+fn handle_action_config(
+    database: &Arc<Mutex<Database>>,
+    config_message: ConfigMessage,
+) -> anyhow::Result<OutboundMessage> {
+    let Ok(database) = database.lock() else {
+        anyhow::bail!("Failed to lock database");
+    };
+    match config_message {
+        ConfigMessage::Get { key } => {
+            let value = database.config_get(&key);
+            Ok(OutboundMessage::ConfigGet { key, value })
         }
     }
 }
@@ -95,17 +111,13 @@ fn handle_action_get(
     Ok(OutboundMessage::Get(value))
 }
 
-fn handle_action_config(
+fn handle_action_keys(
     database: &Arc<Mutex<Database>>,
-    config_message: ConfigMessage,
+    pattern: String,
 ) -> anyhow::Result<OutboundMessage> {
     let Ok(database) = database.lock() else {
         anyhow::bail!("Failed to lock database");
     };
-    match config_message {
-        ConfigMessage::Get { key } => {
-            let value = database.config_get(&key);
-            Ok(OutboundMessage::ConfigGet { key, value })
-        }
-    }
+    let value = database.keys(pattern)?;
+    Ok(OutboundMessage::Keys(value))
 }

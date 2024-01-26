@@ -9,15 +9,19 @@ pub fn create_null_bulk_strings_reply() -> String {
     format!("{NULL_BULK_STRING}{END_OF_LINE}")
 }
 
-pub fn create_bulk_strings_reply(lines: Vec<&str>) -> String {
+pub fn create_bulk_strings_reply(lines: Vec<String>) -> String {
     let mut reply = String::new();
     for line in lines {
         reply.push_str(&format!("${}{END_OF_LINE}{line}{END_OF_LINE}", line.len()));
     }
+
+    if reply.is_empty() {
+        return create_null_bulk_strings_reply();
+    }
     reply
 }
 
-pub fn create_array_reply(lines: Vec<&str>) -> String {
+pub fn create_array_reply(lines: Vec<String>) -> String {
     format!(
         "*{}{END_OF_LINE}{}",
         lines.len(),

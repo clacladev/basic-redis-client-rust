@@ -83,4 +83,18 @@ impl Database {
         self.data.remove(&key);
         Ok(())
     }
+
+    pub fn keys(&self, pattern: String) -> anyhow::Result<Vec<String>> {
+        let keys = self.data.keys().cloned().collect();
+        if pattern == "*" {
+            return Ok(keys);
+        }
+
+        let filtered_keys = keys
+            .iter()
+            .filter(|key| key.contains(&pattern))
+            .cloned()
+            .collect();
+        Ok(filtered_keys)
+    }
 }
