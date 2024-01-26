@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use crate::database::Database;
+use crate::{cli::CliParam, database::Database};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::{TcpListener, TcpStream},
@@ -17,8 +17,10 @@ mod inbound_message;
 mod outbound_message;
 mod resp;
 
-pub async fn start_database() -> anyhow::Result<()> {
-    let database = Arc::new(Mutex::new(Database::new()));
+pub async fn start_database(cli_params: Vec<CliParam>) -> anyhow::Result<()> {
+    let mut database = Database::new();
+    database.config_setup(&cli_params);
+    let database = Arc::new(Mutex::new(database));
 
     let listener = TcpListener::bind(format!("{}:{}", DEFAULT_IP, DEFAULT_PORT)).await?;
     println!(
@@ -94,22 +96,16 @@ fn handle_action_get(
 }
 
 fn handle_action_config(
-    _database: &Arc<Mutex<Database>>,
+    database: &Arc<Mutex<Database>>,
     config_message: ConfigMessage,
 ) -> anyhow::Result<OutboundMessage> {
-    // let Ok(mut database) = database.lock() else {
-    //     anyhow::bail!("Failed to lock database");
-    // };
-    // let value = database.get(key)?;
-
+    let Ok(database) = database.lock() else {
+        anyhow::bail!("Failed to lock database");
+    };
     match config_message {
         ConfigMessage::Get { key } => {
-            // TODO: Implement
-            let value = "/dir/yolo".to_string();
-            Ok(OutboundMessage::ConfigGet {
-                key,
-                value: Some(value),
-            })
+            let value = database.config_get(&key);
+            Ok(OutboundMessage::ConfigGet { key, value })
         }
     }
 }

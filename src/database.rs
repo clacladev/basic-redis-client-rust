@@ -1,7 +1,11 @@
+use crate::cli::CliParam;
 use std::{
     collections::HashMap,
     time::{SystemTime, UNIX_EPOCH},
 };
+
+const SETTINGS_DIR_ID: &str = "dir";
+const SETTINGS_DBFILENAME_ID: &str = "dbfilename";
 
 #[derive(Debug)]
 struct Item {
@@ -11,15 +15,40 @@ struct Item {
 
 pub struct Database {
     data: HashMap<String, Item>,
+    config: HashMap<String, String>,
 }
 
+// Init related
 impl Database {
     pub fn new() -> Self {
         Database {
             data: HashMap::new(),
+            config: HashMap::new(),
         }
     }
+}
 
+// Config related
+impl Database {
+    pub fn config_setup(&mut self, cli_params: &[CliParam]) {
+        cli_params.iter().for_each(|param| match param {
+            CliParam::Dir(dir) => {
+                self.config.insert(SETTINGS_DIR_ID.to_string(), dir.clone());
+            }
+            CliParam::DbFilename(dbfilename) => {
+                self.config
+                    .insert(SETTINGS_DBFILENAME_ID.to_string(), dbfilename.clone());
+            }
+        });
+    }
+
+    pub fn config_get(&self, key: &str) -> Option<String> {
+        self.config.get(key).cloned()
+    }
+}
+
+// Data related
+impl Database {
     pub fn set(
         &mut self,
         key: String,

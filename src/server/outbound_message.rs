@@ -28,7 +28,6 @@ impl Into<String> for OutboundMessage {
 impl Into<Vec<u8>> for OutboundMessage {
     fn into(self) -> Vec<u8> {
         let string: String = self.into();
-        println!("-> Outbound message encoded: {:?}", string);
         string.into_bytes()
     }
 }
