@@ -7,7 +7,7 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "./spawn_redis_server.sh",
+      "name": "Debug ./spawn_redis_server.sh --dir ./ --dbfilename dump.rdb",
       "cargo": {
         "args": [
           "build",
@@ -19,7 +19,32 @@
           "kind": "bin"
         }
       },
-      "args": ["./spawn_redis_server.sh"],
+      "args": [
+        "./spawn_redis_server.sh",
+        "--dir",
+        "./",
+        "--dbfilename",
+        "dump.rdb"
+      ],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in executable 'redis-starter-rust'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--bin=redis-starter-rust",
+          "--package=redis-starter-rust"
+        ],
+        "filter": {
+          "name": "redis-starter-rust",
+          "kind": "bin"
+        }
+      },
+      "args": [],
       "cwd": "${workspaceFolder}"
     }
   ]

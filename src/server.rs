@@ -20,6 +20,8 @@ mod resp;
 pub async fn start_database(cli_params: Vec<CliParam>) -> anyhow::Result<()> {
     let mut database = Database::new();
     database.config_setup(&cli_params);
+    database.load_from_disk()?;
+
     let database = Arc::new(Mutex::new(database));
 
     let listener = TcpListener::bind(format!("{}:{}", DEFAULT_IP, DEFAULT_PORT)).await?;
