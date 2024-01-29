@@ -61,25 +61,47 @@ fn read_string(bytes: &[u8]) -> ReadResult<String> {
     Ok((string, read_count))
 }
 
-// fn read_number(bytes: &[u8]) -> ReadResult<u32> {
-//     let (read_length, read_count_length) = read_length(bytes)?;
-//     let bytes = &bytes[read_count_length..];
+fn read_number(bytes: &[u8]) -> ReadResult<u32> {
+    // let (read_length, read_count_length) = read_length(bytes)?;
+    // let bytes = &bytes[read_count_length..];
 
-//     let (number, read_count_number) = match read_length {
-//         ReadLength::Number(length) | ReadLength::Special(length) => match length {
-//             1 => (u32::from_le_bytes([0u8, 0u8, 0u8, bytes[0]]), 1),
-//             2 => (u32::from_le_bytes([0u8, 0u8, bytes[0], bytes[1]]), 2),
-//             4 => (
-//                 u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]),
-//                 4,
-//             ),
-//             _ => anyhow::bail!("-> Int length not supported. Length: {}", length),
-//         },
-//     };
+    // let (number, read_count_number) = match read_length {
+    //     ReadLength::Number(length) | ReadLength::Special(length) => match length {
+    //         1 => (u32::from_le_bytes([0u8, 0u8, 0u8, bytes[0]]), 1),
+    //         2 => (u32::from_le_bytes([0u8, 0u8, bytes[0], bytes[1]]), 2),
+    //         4 => (
+    //             u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]),
+    //             4,
+    //         ),
+    //         _ => anyhow::bail!("-> Int length not supported. Length: {:?}", read_length),
+    //     },
+    // };
 
-//     let read_count = read_count_length + read_count_number;
-//     Ok((number, read_count))
-// }
+    // let read_count = read_count_length + read_count_number;
+    // Ok((number, read_count))
+
+    let kind = bytes[0] >> 6;
+    let b0 = bytes[0] & 0b0011_1111;
+
+    match kind {
+        READ_LENGTH_TYPE_6BIT => Ok((b0 as u32, 1)),
+        READ_LENGTH_TYPE_14BIT => Ok((((b0 as u32) << 8) | (bytes[1] as u32), 2)),
+        READ_LENGTH_TYPE_32BIT => Ok((
+            u32::from_le_bytes([bytes[1], bytes[2], bytes[3], bytes[4]]),
+            5,
+        )),
+        READ_LENGTH_TYPE_SPECIAL => match b0 {
+            0 => Ok((bytes[1] as u32, 2)),
+            1 => Ok((u16::from_le_bytes([bytes[1], bytes[2]]) as u32, 3)),
+            2 => Ok((
+                u32::from_le_bytes([bytes[1], bytes[2], bytes[3], bytes[4]]),
+                5,
+            )),
+            _ => anyhow::bail!("-> Length encoding not supported. Special kind id: {}", b0),
+        },
+        _ => anyhow::bail!("-> Length encoding not supported. Kind: {}", kind),
+    }
+}
 
 pub fn read_headers(bytes: &[u8]) -> ReadResult<u32> {
     const MAGIC_STRING_LENGTH: usize = 5;
@@ -101,6 +123,14 @@ pub fn read_auxilliary(bytes: &[u8]) -> ReadResult<(String, String)> {
     let (value, read_count_value) = read_string(&bytes)?;
     let read_count = read_count_key + read_count_value;
     Ok(((key, value), read_count))
+}
+
+pub fn read_resize_db(bytes: &[u8]) -> ReadResult<(u32, u32)> {
+    let (size_hash_table, read_count_hash_table) = read_number(&bytes)?;
+    let bytes = &bytes[read_count_hash_table..];
+    let (size_expiry_hash_table, read_count_expiry_hash_table) = read_number(&bytes)?;
+    let read_count = read_count_hash_table + read_count_expiry_hash_table;
+    Ok(((size_hash_table, size_expiry_hash_table), read_count))
 }
 
 #[cfg(test)]
@@ -135,6 +165,7 @@ mod test {
     const HEADERS_START: usize = 0;
     const AUX_1_START: usize = 10;
     const AUX_2_START: usize = 27;
+    const RESIZE_DB_START: usize = 82;
 
     #[test]
     fn test_read_length_returns_read_length_number() {
@@ -213,6 +244,27 @@ mod test {
     }
 
     #[test]
+    fn test_read_number_correctly() {
+        // Given
+        let bytes = &TEST_BYTES[RESIZE_DB_START..];
+        // When
+        let (number, read_count) = read_number(bytes).unwrap();
+        // Then
+        assert_eq!(read_count, 1);
+        assert_eq!(number, 1);
+
+        // Given
+        let bytes = &bytes[read_count..];
+        // When
+        let (number, read_count) = read_number(bytes).unwrap();
+        // Then
+        assert_eq!(read_count, 1);
+        assert_eq!(number, 0);
+    }
+
+    // ----------------------------
+
+    #[test]
     fn test_read_headers() {
         // Given
         let bytes = &TEST_BYTES[HEADERS_START..AUX_1_START];
@@ -242,5 +294,18 @@ mod test {
         assert_eq!(read_count, 13);
         assert_eq!(key, "redis-bits");
         assert_eq!(value, "64");
+    }
+
+    #[test]
+    fn test_resize_db() {
+        // Given
+        let bytes = &TEST_BYTES[RESIZE_DB_START..];
+        // When
+        let ((size_hash_table, size_expiry_hash_table), read_count) =
+            read_resize_db(bytes).unwrap();
+        // Then
+        assert_eq!(read_count, 2);
+        assert_eq!(size_hash_table, 1);
+        assert_eq!(size_expiry_hash_table, 0);
     }
 }

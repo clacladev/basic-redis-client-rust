@@ -1,5 +1,5 @@
 use super::{Database, SETTINGS_DBFILENAME_ID, SETTINGS_DIR_ID};
-use crate::database::rdb::read_functions::{read_auxilliary, read_headers};
+use crate::database::rdb::read_functions::{read_auxilliary, read_headers, read_resize_db};
 use std::path::PathBuf;
 
 mod read_functions;
@@ -82,6 +82,13 @@ impl Database {
                     let db_number = bytes[0];
                     bytes = &bytes[1..];
                     println!("-> DB number: {}", db_number);
+                }
+                RdbOpCode::ResizeDB => {
+                    let ((size_hash_table, size_expiry_hash_table), read_count) =
+                        read_resize_db(&bytes)?;
+                    bytes = &bytes[read_count..];
+                    println!("-> Size hash table: {}", size_hash_table);
+                    println!("-> Size expire hash table: {}", size_expiry_hash_table);
                 }
                 _ => {
                     eprintln!("-> Unmanaged op code: {:?}", op_code);
