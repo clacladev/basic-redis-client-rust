@@ -18,6 +18,7 @@ struct Item {
 pub struct Database {
     data: HashMap<String, Item>,
     config: HashMap<String, String>,
+    metadata: HashMap<String, String>,
 }
 
 // Init related
@@ -26,6 +27,7 @@ impl Database {
         Database {
             data: HashMap::new(),
             config: HashMap::new(),
+            metadata: HashMap::new(),
         }
     }
 }
