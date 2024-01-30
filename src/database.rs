@@ -6,6 +6,8 @@ use std::{
 const SETTINGS_DIR_ID: &str = "dir";
 const SETTINGS_DBFILENAME_ID: &str = "dbfilename";
 
+const PATTERN_ALL: &str = "*";
+
 mod config;
 mod rdb;
 
@@ -69,7 +71,7 @@ impl Database {
 
     pub fn keys(&self, pattern: String) -> anyhow::Result<Vec<String>> {
         let keys = self.data.keys().cloned().collect();
-        if pattern == "*" {
+        if pattern == PATTERN_ALL {
             return Ok(keys);
         }
 
