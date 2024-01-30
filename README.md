@@ -1,6 +1,6 @@
-# Basic Redis DB Rust Client
+# Basic Redis DB Rust Server
 
-This is a basic Redis db implementation in Rust, which is a key-value store. This is a small research project.
+This is a basic Redis DB server implementation in Rust, which is a key-value store. This is a small research project.
 
 ## How to run
 
