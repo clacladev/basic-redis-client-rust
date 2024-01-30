@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod test {
     use crate::database::rdb::read_functions::{
-        read_auxiliary, read_db_number, read_headers, read_length, read_number, read_resize_db,
-        read_string, ReadLength,
+        read_auxiliary, read_db_number, read_headers, read_key_value, read_length, read_number,
+        read_resize_db, read_string, ReadLength,
     };
 
     const TEST_BYTES: &[u8] = &[
@@ -37,6 +37,7 @@ mod test {
     const AUX_2_START: usize = 27;
     const SELECT_DB_START: usize = 80;
     const RESIZE_DB_START: usize = 82;
+    const KEY_VALUE_1_START: usize = 84;
 
     #[test]
     fn test_read_length_returns_read_length_number() {
@@ -131,6 +132,18 @@ mod test {
         // Then
         assert_eq!(read_count, 1);
         assert_eq!(number, 0);
+    }
+
+    #[test]
+    fn test_read_key_value() {
+        // Given
+        let bytes = &TEST_BYTES[KEY_VALUE_1_START..];
+        // When
+        let ((key, value), read_count) = read_key_value(bytes).unwrap();
+        // Then
+        assert_eq!(read_count, 13);
+        assert_eq!(key, "mykey");
+        assert_eq!(value, "myval");
     }
 
     // ----------------------------

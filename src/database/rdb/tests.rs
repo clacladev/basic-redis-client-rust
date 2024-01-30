@@ -29,7 +29,6 @@ mod tests {
         expected_metadata.insert("ctime".into(), "1706281767".into());
         expected_metadata.insert("used-mem".into(), "1148576".into());
         assert_eq!(database.metadata, expected_metadata);
-
-        // TODO: check the rest of the data when parsed
+        assert_eq!(database.get("mykey".into()).unwrap(), Some("myval".into()));
     }
 }

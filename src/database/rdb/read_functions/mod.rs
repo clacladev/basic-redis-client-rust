@@ -1,5 +1,9 @@
+use self::value_type::ValueType;
+
 #[cfg(test)]
 mod tests;
+
+mod value_type;
 
 const READ_LENGTH_TYPE_6BIT: u8 = 0b00;
 const READ_LENGTH_TYPE_14BIT: u8 = 0b01;
@@ -138,4 +142,19 @@ pub fn read_resize_db(bytes: &[u8]) -> ReadResult<(u32, u32)> {
     let (size_expiry_hash_table, read_count_expiry_hash_table) = read_number(&bytes)?;
     let read_count = read_count_hash_table + read_count_expiry_hash_table;
     Ok(((size_hash_table, size_expiry_hash_table), read_count))
+}
+
+pub fn read_key_value(bytes: &[u8]) -> ReadResult<(String, String)> {
+    let value_type = ValueType::try_from(bytes[0])?;
+    let bytes = &bytes[1..];
+
+    match value_type {
+        ValueType::String => {
+            let (key, read_count_key) = read_string(&bytes)?;
+            let bytes = &bytes[read_count_key..];
+            let (value, read_count_value) = read_string(&bytes)?;
+            let read_count = read_count_key + read_count_value + 1;
+            Ok(((key, value), read_count))
+        }
+    }
 }

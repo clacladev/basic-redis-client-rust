@@ -1,7 +1,9 @@
 use super::{Database, SETTINGS_DBFILENAME_ID, SETTINGS_DIR_ID};
 use crate::database::rdb::{
     op_code::OpCode,
-    read_functions::{read_auxiliary, read_db_number, read_headers, read_resize_db},
+    read_functions::{
+        read_auxiliary, read_db_number, read_headers, read_key_value, read_resize_db,
+    },
 };
 use std::path::PathBuf;
 
@@ -42,7 +44,10 @@ impl Database {
         loop {
             println!("--> Pointer position: {:?}", rdb_bytes.len() - bytes.len()); // TODO: remove
             let Ok(op_code) = OpCode::try_from(bytes[0]) else {
-                eprintln!("-> KEY VALUE PARSIGN");
+                let ((key, value), read_count) = read_key_value(&bytes)?;
+                bytes = &bytes[read_count..];
+                println!("-> Key: {}, Value: {}", key, value);
+                self.set(key, value, None)?;
                 continue;
             };
 
