@@ -72,7 +72,7 @@ impl Database {
                     bytes = &bytes[read_count..];
                 }
                 _ => {
-                    eprintln!("-> Unmanaged op code: {:?}", op_code);
+                    eprintln!("-> Unmanaged op code: {op_code:?}");
                     break;
                 }
             }

@@ -24,17 +24,14 @@ pub async fn start_database(cli_params: Vec<CliParam>) -> anyhow::Result<()> {
     if database.can_load_from_disk() {
         let result = database.load_from_disk();
         if let Err(error) = result {
-            eprintln!("-> Failed to load database from disk. Error: {}", error);
+            eprintln!("-> Failed to load database from disk. Error: {error}");
         }
     }
 
     let database = Arc::new(Mutex::new(database));
 
-    let listener = TcpListener::bind(format!("{}:{}", DEFAULT_IP, DEFAULT_PORT)).await?;
-    println!(
-        "-> Started database server at {}:{}",
-        DEFAULT_IP, DEFAULT_PORT
-    );
+    let listener = TcpListener::bind(format!("{DEFAULT_IP}:{DEFAULT_PORT}")).await?;
+    println!("-> Started database server at {DEFAULT_IP}:{DEFAULT_PORT}");
 
     loop {
         let (mut stream, _) = listener.accept().await?;
@@ -51,10 +48,10 @@ async fn handle_stream(
         let mut buffer: Vec<u8> = Vec::with_capacity(1 * MB);
         let bytes_read = stream.read_buf(&mut buffer).await?;
         let inbound_message = InboundMessage::try_from(&buffer[..bytes_read])?;
-        println!("-> Inbound message: {:?}", inbound_message);
+        println!("-> Inbound message: {inbound_message:?}");
 
         let outbound_message = handle_message(&database, &inbound_message)?;
-        println!("-> Outbound message: {:?}", outbound_message);
+        println!("-> Outbound message: {outbound_message:?}");
         let outbound_message_bytes: Vec<u8> = outbound_message.into();
         stream.write_all(&outbound_message_bytes).await?;
     }
