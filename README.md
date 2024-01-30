@@ -1,4 +1,4 @@
-# Basic Redis DB Rust Server
+# Basic Redis DB Server in Rust
 
 This is a basic Redis DB server implementation in Rust, which is a key-value store. This is a small research project.
 
