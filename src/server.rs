@@ -22,7 +22,10 @@ pub async fn start_database(cli_params: Vec<CliParam>) -> anyhow::Result<()> {
     database.config_setup(&cli_params);
 
     if database.can_load_from_disk() {
-        database.load_from_disk()?;
+        let result = database.load_from_disk();
+        if let Err(error) = result {
+            println!("-> Failed to load database from disk. Error: {}", error);
+        }
     }
 
     let database = Arc::new(Mutex::new(database));

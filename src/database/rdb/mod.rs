@@ -91,6 +91,8 @@ impl Database {
 }
 
 /*
+Docs: https://rdb.fnordig.de/file_format.html
+
 Example RDB file:
 
 ----------------------------#
