@@ -12,6 +12,6 @@ async fn main() {
 
     match start_database(cli_params).await {
         Ok(_) => {}
-        Err(e) => println!("-> Error: {}", e),
+        Err(e) => eprintln!("-> Error: {}", e),
     }
 }

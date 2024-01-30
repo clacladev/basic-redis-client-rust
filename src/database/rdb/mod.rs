@@ -40,19 +40,15 @@ impl Database {
 
     fn parse_and_restore_rdb(&mut self, rdb_bytes: &[u8]) -> anyhow::Result<()> {
         let mut bytes = rdb_bytes;
-        println!("--> RDB size: {:?}", rdb_bytes.len()); // TODO: remove
 
         let (version, read_count) = read_headers(bytes)?;
         bytes = &bytes[read_count..];
-        println!("-> Version: {}", version);
         self.metadata.insert("version".into(), version.to_string());
 
         loop {
-            println!("--> Pointer position: {:?}", rdb_bytes.len() - bytes.len()); // TODO: remove
             let Ok(op_code) = OpCode::try_from(bytes[0]) else {
                 let ((key, value), read_count) = read_key_value(&bytes)?;
                 bytes = &bytes[read_count..];
-                println!("-> Key: {}, Value: {}", key, value);
                 self.set(key, value, None)?;
                 continue;
             };
@@ -64,20 +60,16 @@ impl Database {
                 OpCode::Auxiliary => {
                     let ((key, value), read_count) = read_auxiliary(&bytes)?;
                     bytes = &bytes[read_count..];
-                    println!("-> Key: {}, Value: {}", key, value);
                     self.metadata.insert(key, value);
                 }
                 OpCode::SelectDB => {
-                    let (db_number, read_count) = read_db_number(&bytes)?;
+                    let (_db_number, read_count) = read_db_number(&bytes)?;
                     bytes = &bytes[read_count..];
-                    println!("-> DB number: {}", db_number);
                 }
                 OpCode::ResizeDB => {
-                    let ((size_hash_table, size_expiry_hash_table), read_count) =
+                    let ((_size_hash_table, _size_expiry_hash_table), read_count) =
                         read_resize_db(&bytes)?;
                     bytes = &bytes[read_count..];
-                    println!("-> Size hash table: {}", size_hash_table);
-                    println!("-> Size expire hash table: {}", size_expiry_hash_table);
                 }
                 _ => {
                     eprintln!("-> Unmanaged op code: {:?}", op_code);

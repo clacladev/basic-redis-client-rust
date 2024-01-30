@@ -47,7 +47,6 @@ impl Database {
         let Some(item) = self.data.get(&key) else {
             return Ok(None);
         };
-        println!("-> Item: {:?}", item);
 
         let value = Some(item.value.clone());
         let Some(expires_at) = item.expires_at else {

@@ -69,24 +69,6 @@ fn read_string(bytes: &[u8]) -> ReadResult<String> {
 }
 
 fn read_number(bytes: &[u8]) -> ReadResult<u32> {
-    // let (read_length, read_count_length) = read_length(bytes)?;
-    // let bytes = &bytes[read_count_length..];
-
-    // let (number, read_count_number) = match read_length {
-    //     ReadLength::Number(length) | ReadLength::Special(length) => match length {
-    //         1 => (u32::from_le_bytes([0u8, 0u8, 0u8, bytes[0]]), 1),
-    //         2 => (u32::from_le_bytes([0u8, 0u8, bytes[0], bytes[1]]), 2),
-    //         4 => (
-    //             u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]),
-    //             4,
-    //         ),
-    //         _ => anyhow::bail!("-> Int length not supported. Length: {:?}", read_length),
-    //     },
-    // };
-
-    // let read_count = read_count_length + read_count_number;
-    // Ok((number, read_count))
-
     let kind = bytes[0] >> 6;
     let b0 = bytes[0] & 0b0011_1111;
 
