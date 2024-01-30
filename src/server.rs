@@ -20,7 +20,10 @@ mod resp;
 pub async fn start_database(cli_params: Vec<CliParam>) -> anyhow::Result<()> {
     let mut database = Database::new();
     database.config_setup(&cli_params);
-    database.load_from_disk()?;
+
+    if database.can_load_from_disk() {
+        database.load_from_disk()?;
+    }
 
     let database = Arc::new(Mutex::new(database));
 

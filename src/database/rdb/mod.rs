@@ -14,6 +14,12 @@ mod read_functions;
 mod tests;
 
 impl Database {
+    pub fn can_load_from_disk(&mut self) -> bool {
+        let dir = self.config_get(SETTINGS_DIR_ID);
+        let dbfilename = self.config_get(SETTINGS_DBFILENAME_ID);
+        dir.is_some() && dbfilename.is_some()
+    }
+
     pub fn load_from_disk(&mut self) -> anyhow::Result<()> {
         let Some(dir) = self.config_get(SETTINGS_DIR_ID) else {
             anyhow::bail!("Failed to get dir")
