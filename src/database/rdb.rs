@@ -41,12 +41,16 @@ impl Database {
 
         loop {
             println!("--> Pointer position: {:?}", rdb_bytes.len() - bytes.len()); // TODO: remove
-            let op_code = OpCode::try_from(bytes[0])?;
+            let Ok(op_code) = OpCode::try_from(bytes[0]) else {
+                eprintln!("-> KEY VALUE PARSIGN");
+                continue;
+            };
+
             bytes = &bytes[1..];
 
             match op_code {
                 OpCode::EOF => break,
-                OpCode::Aux => {
+                OpCode::Auxiliary => {
                     let ((key, value), read_count) = read_auxiliary(&bytes)?;
                     bytes = &bytes[read_count..];
                     println!("-> Key: {}, Value: {}", key, value);

@@ -12,7 +12,7 @@ pub enum OpCode {
     ExpireTimeS,
     ExpireTimeMS,
     ResizeDB,
-    Aux,
+    Auxiliary,
 }
 
 impl TryFrom<u8> for OpCode {
@@ -25,7 +25,7 @@ impl TryFrom<u8> for OpCode {
             OP_CODE_EXPIRETIME_S => Ok(Self::ExpireTimeS),
             OP_CODE_EXPIRETIME_MS => Ok(Self::ExpireTimeMS),
             OP_CODE_RESIZEDB => Ok(Self::ResizeDB),
-            OP_CODE_AUX => Ok(Self::Aux),
+            OP_CODE_AUX => Ok(Self::Auxiliary),
             _ => anyhow::bail!("Unknown op code: {:#02X}", val),
         }
     }
