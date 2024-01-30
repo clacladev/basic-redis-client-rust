@@ -1,7 +1,7 @@
 use super::{Database, SETTINGS_DBFILENAME_ID, SETTINGS_DIR_ID};
 use crate::database::rdb::{
     op_code::OpCode,
-    read_functions::{read_auxiliary, read_headers, read_resize_db},
+    read_functions::{read_auxiliary, read_db_number, read_headers, read_resize_db},
 };
 use std::path::PathBuf;
 
@@ -53,8 +53,8 @@ impl Database {
                     self.metadata.insert(key, value);
                 }
                 OpCode::SelectDB => {
-                    let db_number = bytes[0];
-                    bytes = &bytes[1..];
+                    let (db_number, read_count) = read_db_number(&bytes)?;
+                    bytes = &bytes[read_count..];
                     println!("-> DB number: {}", db_number);
                 }
                 OpCode::ResizeDB => {

@@ -1,5 +1,5 @@
 #[cfg(test)]
-mod test;
+mod tests;
 
 const READ_LENGTH_TYPE_6BIT: u8 = 0b00;
 const READ_LENGTH_TYPE_14BIT: u8 = 0b01;
@@ -118,6 +118,10 @@ pub fn read_headers(bytes: &[u8]) -> ReadResult<u32> {
 
     let read_count = MAGIC_STRING_LENGTH + VERSION_LENGTH;
     Ok((version, read_count))
+}
+
+pub fn read_db_number(bytes: &[u8]) -> ReadResult<u32> {
+    Ok(read_number(&bytes)?)
 }
 
 pub fn read_auxiliary(bytes: &[u8]) -> ReadResult<(String, String)> {
