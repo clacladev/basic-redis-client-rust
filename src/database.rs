@@ -12,13 +12,13 @@ mod config;
 mod rdb;
 
 #[derive(Debug)]
-struct Item {
+pub struct Entry {
     value: String,
     expires_at: Option<u128>,
 }
 
 pub struct Database {
-    data: HashMap<String, Item>,
+    data: HashMap<String, Entry>,
     config: HashMap<String, String>,
     metadata: HashMap<String, String>,
 }
@@ -41,7 +41,7 @@ impl Database {
         value: String,
         expires_at: Option<u128>,
     ) -> anyhow::Result<()> {
-        self.data.insert(key, Item { value, expires_at });
+        self.data.insert(key, Entry { value, expires_at });
         Ok(())
     }
 

@@ -30,5 +30,10 @@ mod tests {
         expected_metadata.insert("used-mem".into(), "1148576".into());
         assert_eq!(database.metadata, expected_metadata);
         assert_eq!(database.get("mykey".into()).unwrap(), Some("myval".into()));
+        assert_eq!(database.get("exp_key".into()).unwrap(), None);
+        assert_eq!(
+            database.get("not_exp_key".into()).unwrap(),
+            Some("not_expired_value".into())
+        );
     }
 }

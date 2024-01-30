@@ -1,3 +1,5 @@
+use self::read_functions::read_key_value_with_ms_expiry;
+
 use super::{Database, SETTINGS_DBFILENAME_ID, SETTINGS_DIR_ID};
 use crate::database::rdb::{
     op_code::OpCode,
@@ -70,6 +72,11 @@ impl Database {
                     let ((_size_hash_table, _size_expiry_hash_table), read_count) =
                         read_resize_db(&bytes)?;
                     bytes = &bytes[read_count..];
+                }
+                OpCode::ExpireTimeMS => {
+                    let ((key, entry), read_count) = read_key_value_with_ms_expiry(&bytes)?;
+                    bytes = &bytes[read_count..];
+                    self.set(key, entry.value, entry.expires_at)?;
                 }
                 _ => {
                     eprintln!("-> Unmanaged op code: {op_code:?}");

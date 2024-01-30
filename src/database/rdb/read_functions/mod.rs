@@ -1,3 +1,5 @@
+use crate::database::Entry;
+
 use self::value_type::ValueType;
 
 #[cfg(test)]
@@ -139,4 +141,21 @@ pub fn read_key_value(bytes: &[u8]) -> ReadResult<(String, String)> {
             Ok(((key, value), read_count))
         }
     }
+}
+
+pub fn read_key_value_with_ms_expiry(bytes: &[u8]) -> ReadResult<(String, Entry)> {
+    let expiry_ms = u64::from_le_bytes([
+        bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
+    ]);
+    let bytes = &bytes[8..];
+
+    let ((key, value), read_count) = read_key_value(&bytes)?;
+    let read_count = read_count + 8;
+
+    let entry = Entry {
+        value,
+        expires_at: Some(expiry_ms as u128),
+    };
+
+    Ok(((key, entry), read_count))
 }
