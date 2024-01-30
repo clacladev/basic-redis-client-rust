@@ -1,41 +1,15 @@
 use super::{Database, SETTINGS_DBFILENAME_ID, SETTINGS_DIR_ID};
-use crate::database::rdb::read_functions::{read_auxilliary, read_headers, read_resize_db};
+use crate::database::rdb::{
+    op_code::OpCode,
+    read_functions::{read_auxiliary, read_headers, read_resize_db},
+};
 use std::path::PathBuf;
 
+mod op_code;
 mod read_functions;
 
-const OP_CODE_EOF: u8 = 0xff;
-const OP_CODE_SELECTDB: u8 = 0xfe;
-const OP_CODE_EXPIRETIME_S: u8 = 0xfd;
-const OP_CODE_EXPIRETIME_MS: u8 = 0xfc;
-const OP_CODE_RESIZEDB: u8 = 0xfb;
-const OP_CODE_AUX: u8 = 0xfa;
-
-#[derive(Debug)]
-enum RdbOpCode {
-    EOF,
-    SelectDB,
-    ExpireTimeS,
-    ExpireTimeMS,
-    ResizeDB,
-    Aux,
-}
-
-impl TryFrom<u8> for RdbOpCode {
-    type Error = anyhow::Error;
-
-    fn try_from(val: u8) -> Result<Self, Self::Error> {
-        match val {
-            OP_CODE_EOF => Ok(Self::EOF),
-            OP_CODE_SELECTDB => Ok(Self::SelectDB),
-            OP_CODE_EXPIRETIME_S => Ok(Self::ExpireTimeS),
-            OP_CODE_EXPIRETIME_MS => Ok(Self::ExpireTimeMS),
-            OP_CODE_RESIZEDB => Ok(Self::ResizeDB),
-            OP_CODE_AUX => Ok(Self::Aux),
-            _ => anyhow::bail!("Unknown op code: {:#02X}", val),
-        }
-    }
-}
+#[cfg(test)]
+mod tests;
 
 impl Database {
     pub fn load_from_disk(&mut self) -> anyhow::Result<()> {
@@ -67,23 +41,23 @@ impl Database {
 
         loop {
             println!("--> Pointer position: {:?}", rdb_bytes.len() - bytes.len()); // TODO: remove
-            let op_code = RdbOpCode::try_from(bytes[0])?;
+            let op_code = OpCode::try_from(bytes[0])?;
             bytes = &bytes[1..];
 
             match op_code {
-                RdbOpCode::EOF => break,
-                RdbOpCode::Aux => {
-                    let ((key, value), read_count) = read_auxilliary(&bytes)?;
+                OpCode::EOF => break,
+                OpCode::Aux => {
+                    let ((key, value), read_count) = read_auxiliary(&bytes)?;
                     bytes = &bytes[read_count..];
                     println!("-> Key: {}, Value: {}", key, value);
                     self.metadata.insert(key, value);
                 }
-                RdbOpCode::SelectDB => {
+                OpCode::SelectDB => {
                     let db_number = bytes[0];
                     bytes = &bytes[1..];
                     println!("-> DB number: {}", db_number);
                 }
-                RdbOpCode::ResizeDB => {
+                OpCode::ResizeDB => {
                     let ((size_hash_table, size_expiry_hash_table), read_count) =
                         read_resize_db(&bytes)?;
                     bytes = &bytes[read_count..];
@@ -138,40 +112,3 @@ FE $length-encoding         # Previous db ends, next db starts.
 FF                          ## End of RDB file indicator
 8-byte-checksum             ## CRC64 checksum of the entire file.
 */
-
-#[cfg(test)]
-mod tests {
-    use std::collections::HashMap;
-
-    use super::*;
-
-    const TEST_BYTES: &[u8] = &[
-        0x52, 0x45, 0x44, 0x49, 0x53, 0x30, 0x30, 0x31, 0x31, 0xfa, 0x09, 0x72, 0x65, 0x64, 0x69,
-        0x73, 0x2d, 0x76, 0x65, 0x72, 0x05, 0x37, 0x2e, 0x32, 0x2e, 0x34, 0xfa, 0x0a, 0x72, 0x65,
-        0x64, 0x69, 0x73, 0x2d, 0x62, 0x69, 0x74, 0x73, 0xc0, 0x40, 0xfa, 0x05, 0x63, 0x74, 0x69,
-        0x6d, 0x65, 0xc2, 0x27, 0xcb, 0xb3, 0x65, 0xfa, 0x08, 0x75, 0x73, 0x65, 0x64, 0x2d, 0x6d,
-        0x65, 0x6d, 0xc2, 0xa0, 0x86, 0x11, 0x00, 0xfa, 0x08, 0x61, 0x6f, 0x66, 0x2d, 0x62, 0x61,
-        0x73, 0x65, 0xc0, 0x00, 0xfe, 0x00, 0xfb, 0x01, 0x00, 0x00, 0x05, 0x6d, 0x79, 0x6b, 0x65,
-        0x79, 0x05, 0x6d, 0x79, 0x76, 0x61, 0x6c, 0xff, 0x3d, 0x30, 0xa8, 0x7a, 0xcf, 0x3e, 0x03,
-        0x9a,
-    ];
-
-    #[test]
-    fn test_parse_and_restore_rdb() {
-        // Given
-        let mut database = Database::new();
-        // When
-        database.parse_and_restore_rdb(TEST_BYTES).unwrap();
-        // Then
-        let mut expected_metadata = HashMap::new();
-        expected_metadata.insert("version".into(), "11".into());
-        expected_metadata.insert("redis-ver".into(), "7.2.4".into());
-        expected_metadata.insert("aof-base".into(), "0".into());
-        expected_metadata.insert("redis-bits".into(), "64".into());
-        expected_metadata.insert("ctime".into(), "1706281767".into());
-        expected_metadata.insert("used-mem".into(), "1148576".into());
-        assert_eq!(database.metadata, expected_metadata);
-
-        // TODO: check the rest of the data when parsed
-    }
-}
